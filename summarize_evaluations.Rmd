@@ -26,7 +26,10 @@ evals3 <- evals2 %>%
   mutate(YearSemester = paste(Year, Semester, sep=" ")) %>%
   mutate(target = case_when(metric %in% c("Prior_Interest", "Interest_Increased", "Effort", "Knowledge_Increased", "Challenge") ~ "student",
                             metric %in% c("Preparedness", "Clarity", "Feedback", "Effectiveness") ~ "instructor",
-                            metric == "Overall_Rating" ~ "course"))
+                            metric == "Overall_Rating" ~ "course")) %>%
+  mutate(majoring = case_when(Reason_Taking_Course %in% c("Major/Minor", "GE, Major/Minor") ~ "major",
+                              Reason_Taking_Course %in% c("Elective", "GE", "GE, Elective", "NA") ~ "nonmajor",
+                              is.na(Reason_Taking_Course) ~ "nonmajor"))
 
 evals3$metric <- factor(evals3$metric, ordered = TRUE, levels = c("Prior_Interest", "Interest_Increased", "Effort", "Knowledge_Increased", "Challenge", "Preparedness", "Clarity", "Feedback", "Effectiveness", "Overall_Rating"))
 
@@ -59,6 +62,17 @@ Plot results by gender and course level
 
 ```{r}
 ggplot(evals3, aes(metric, score)) + geom_boxplot(aes(fill=Gender)) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + facet_wrap(~Course)
+
+```
+
+Plot results by Majors/nonMajors and course level. 
+Generally, majors and nonmajors gave similar ratings, but where they differed non majors typically gave lower ratings.
+For the intro course (DA 101), nonmajors scored lower on "interest".
+For the practicum course (DA 301), nonmajors scored lower on interest, knowledge increased, challenge, and overall instructor and course rating. Nonmajors in this course are typically from math and computer science majors, so technical aspects of the course may be easier for them, while communication aspects of the course may be unexpected or underappreciated from their perspective.
+
+```{r}
+ggplot(evals3, aes(metric, score)) + geom_boxplot(aes(fill=majoring)) + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) + facet_wrap(~Course)
 
 ```
