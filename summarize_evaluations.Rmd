@@ -1,0 +1,88 @@
+---
+title: "Evals"
+author: "Sarah Supp"
+date: "June 21, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+
+evals <- read_csv("Supp_Eval_Data.csv")
+```
+## Clean up eval dataframe
+keep only numeric data and gather into tidy format
+
+```{r}
+evals2 <- evals %>%
+  select(Year, Semester, Course, Section, Gender, GradYear, Major1, Major2, Reason_Taking_Course,
+         Prior_Interest, Interest_Increased, Effort, Knowledge_Increased, Challenge, Overall_Rating,
+         Preparedness, Clarity, Feedback, Effectiveness)
+
+evals3 <- evals2 %>%
+  gather("metric", "score", 10:19) %>%
+  mutate(YearSemester = paste(Year, Semester, sep=" ")) %>%
+  mutate(target = case_when(metric %in% c("Prior_Interest", "Interest_Increased", "Effort", "Knowledge_Increased", "Challenge") ~ "student",
+                            metric %in% c("Preparedness", "Clarity", "Feedback", "Effectiveness") ~ "instructor",
+                            metric == "Overall_Rating" ~ "course"))
+
+evals3$metric <- factor(evals3$metric, ordered = TRUE, levels = c("Prior_Interest", "Interest_Increased", "Effort", "Knowledge_Increased", "Challenge", "Preparedness", "Clarity", "Feedback", "Effectiveness", "Overall_Rating"))
+
+
+evals_summary <- evals2 %>%
+  group_by(Year, Semester, Course, Section) %>%
+  summarise(student_mean = mean(c(Prior_Interest, Interest_Increased, Effort, Knowledge_Increased, Challenge), na.rm=TRUE),
+            instructor_mean = mean(c(Preparedness, Clarity, Feedback, Effectiveness), na.rm=TRUE), 
+            course_mean = mean(Overall_Rating)) %>%
+  gather("mean", "score", 5:7) %>%
+  mutate(YearSemester = paste(Year, Semester, sep=" "))
+
+```
+
+
+
+## Visualize Eval Results
+
+Plot quantitative evaluation measures for students (blue), instructor (green) and the overall course rating (red).
+Courses for a given semester are plotted separately, but responses from multiple sections of a course within a semester are pooled.
+```{r}
+ggplot(evals3, aes(metric, score)) + geom_boxplot(aes(fill=target)) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  facet_grid(YearSemester ~ Course)
+
+```
+
+
+Plot results by gender and course level
+
+```{r}
+ggplot(evals3, aes(metric, score)) + geom_boxplot(aes(fill=Gender)) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + facet_wrap(~Course)
+
+```
+
+On average, how do students feel they did, the instructor did, and the overall course rating?
+
+```{r}
+
+ggplot(evals_summary, aes(mean, score)) + 
+  geom_point(aes(col=mean)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ylim(3,5) +
+  facet_grid(Course~Year)
+
+```
+
+How have course evals changed through time?
+*This may (or may not) be interesting once I have more course repetitions. Or, with small courses, may be fairly uninformative.
+```{r}
+
+ggplot(evals_summary, aes(YearSemester, score, group=mean)) + 
+  geom_point(aes(col=mean)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  stat_smooth(method="lm", aes(col=mean, fill=mean)) + 
+  ylim(1,5)
+
+```
