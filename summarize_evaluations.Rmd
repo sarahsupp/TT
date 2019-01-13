@@ -16,11 +16,13 @@ evals <- read_csv("Supp_Eval_Data.csv")
 keep only numeric data and gather into tidy format
 
 ```{r}
+#select only relevant categories, omit comments
 evals2 <- evals %>%
   select(Year, Semester, Course, Section, Gender, GradYear, Major1, Major2, Reason_Taking_Course,
          Prior_Interest, Interest_Increased, Effort, Knowledge_Increased, Challenge, Overall_Rating,
          Preparedness, Clarity, Feedback, Effectiveness)
 
+#makeit a tidy dataset
 evals3 <- evals2 %>%
   gather("metric", "score", 10:19) %>%
   mutate(YearSemester = paste(Year, Semester, sep=" ")) %>%
@@ -42,6 +44,9 @@ evals_summary <- evals2 %>%
   gather("mean", "score", 5:7) %>%
   mutate(YearSemester = paste(Year, Semester, sep=" "))
 
+evals_summary_all_categories <- evals3 %>%
+  group_by(Year, Semester, Course, Section, metric) %>%
+  summarise(percent_4s_or_5s = sum(score>=4)/n()*100)
 ```
 
 
@@ -100,3 +105,13 @@ ggplot(evals_summary, aes(YearSemester, score, group=mean)) +
   ylim(1,5)
 
 ```
+
+
+What percent of 4s and 5s did I get for each class? #todo: filter out NA values from calc?
+```{r}
+ggplot(evals_summary_all_categories, aes(metric, percent_4s_or_5s)) + 
+  geom_point(aes(shape=Course, col = as.factor(Year))) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  ylim(0,100)
+```
+
