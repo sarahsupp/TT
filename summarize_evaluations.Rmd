@@ -113,5 +113,10 @@ ggplot(evals_summary_all_categories, aes(metric, percent_4s_or_5s)) +
   geom_point(aes(shape=Course, col = as.factor(Year))) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
   ylim(0,100)
+
+ggplot(evals_summary_all_categories, aes(metric, percent_4s_or_5s)) + 
+  geom_bar(stat="identity") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  ylim(0,100) + facet_grid(Year~Course)
 ```
 
